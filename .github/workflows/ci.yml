@@ -2,7 +2,7 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [ main, desarrollo-ejrp, infra-completa-ejrp ]
+    branches: [ main, develop-ejrp ]
 
 jobs:
   python-tests:
