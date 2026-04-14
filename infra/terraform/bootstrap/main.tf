@@ -1,7 +1,6 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  # S3 bucket name debe ser globalmente único → le agregamos account_id
   state_bucket_name = "${var.prefix}-g${var.group}-tfstate-${data.aws_caller_identity.current.account_id}"
   lock_table_name   = "${var.prefix}-g${var.group}-tflock"
 }
@@ -12,11 +11,15 @@ resource "aws_s3_bucket" "tfstate" {
 
 resource "aws_s3_bucket_versioning" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
-  versioning_configuration { status = "Enabled" }
+
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "tfstate" {
-  bucket                  = aws_s3_bucket.tfstate.id
+  bucket = aws_s3_bucket.tfstate.id
+
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -25,6 +28,7 @@ resource "aws_s3_bucket_public_access_block" "tfstate" {
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"

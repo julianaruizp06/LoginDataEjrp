@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 .venv/
 __pycache__/
 *.pyc
@@ -13,4 +13,7 @@ crash.log
 # OS / Editors
 .DS_Store
 Thumbs.db
-.vscode/
+
+# VS Code (solo trackear settings.json)
+.vscode/*
+!.vscode/settings.json

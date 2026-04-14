@@ -1,0 +1,1 @@
+# Placeholder: habilitar en Fase 4 (requiere permisos LF admin)

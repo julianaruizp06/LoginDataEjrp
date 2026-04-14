@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "dataset": "sensores",
+  "source": "local",
+  "primary_key": ["vehiculo","timestamp"],
+  "required_fields": ["vehiculo","timestamp","latitud","longitud","temperatura","evento"],
+  "allowed_values": { "evento": ["OK","TEMP_CRITICA"] },
+  "field_types": {
+    "vehiculo": "string",
+    "timestamp": "datetime_utc_iso",
+    "latitud": "number",
+    "longitud": "number",
+    "temperatura": "number",
+    "evento": "string"
+  },
+  "ingestion_metadata": ["source","dataset","ingest_ts","batch_id","schema_version"]
+}

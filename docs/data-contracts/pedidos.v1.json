@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "dataset": "pedidos",
+  "source": "local",
+  "primary_key": ["id_pedido"],
+  "required_fields": ["id_pedido","id_cliente","id_producto","fecha","monto","estado"],
+  "allowed_values": { "estado": ["CREADO","EN_DESPACHO","ENTREGADO","CANCELADO"] },
+  "field_types": {
+    "id_pedido": "string",
+    "id_cliente": "string",
+    "id_producto": "string",
+    "fecha": "datetime_utc_iso",
+    "monto": "number",
+    "estado": "string"
+  },
+  "ingestion_metadata": ["source","dataset","ingest_ts","batch_id","schema_version"]
+}

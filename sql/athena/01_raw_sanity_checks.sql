@@ -1,0 +1,3 @@
+-- Ajusta el nombre real de tablas que crea Glue (table_prefix)
+-- Ejemplo:
+-- SELECT COUNT(*) FROM logidata_raw.raw_local_pedidos;

@@ -1,31 +1,10 @@
-variable "project" {
-  type        = string
-  description = "Nombre del proyecto"
-}
-
-variable "group" {
-  type        = string
-  description = "Numero de grupo (ej: 01)"
-}
-
-variable "environment" {
-  type        = string
-  description = "Ambiente (dev/prod)"
-}
-
-variable "prefix" {
-  type        = string
-  description = "Prefijo base (ej: ejrp)"
-}
-
 locals {
-  # ej: ejrp-g01-dev
   resource_prefix = "${var.prefix}-g${var.group}-${var.environment}"
+  suffix          = trimspace(var.bucket_suffix) != "" ? "-${var.bucket_suffix}" : ""
 
-  # Buckets sin ambiente (más estable / estándar del workshop)
-  raw_bucket_name          = "${var.prefix}-g${var.group}-raw"
-  curated_bucket_name      = "${var.prefix}-g${var.group}-curated"
-  athena_results_bucket_name = "${var.prefix}-g${var.group}-athena-results"
+  raw_bucket_name            = "${var.prefix}-g${var.group}-raw${local.suffix}"
+  curated_bucket_name        = "${var.prefix}-g${var.group}-curated${local.suffix}"
+  athena_results_bucket_name = "${var.prefix}-g${var.group}-athena-results${local.suffix}"
 
   tags = {
     Project     = var.project

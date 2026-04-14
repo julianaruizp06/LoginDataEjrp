@@ -1,0 +1,7 @@
+{
+  "cSpell.language": "es,en",
+  "cSpell.words": [
+    "LogiData","Lakehouse","ejrp","Kinesis","Firehose","Athena","Glue","LakeFormation",
+    "ingest_date","batch_id","schema_version","quarantine","observabilidad"
+  ]
+}
