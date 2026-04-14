@@ -1,10 +1,12 @@
 -- 03_ctas_sensores_curated.sql
 -- Objetivo:
--- Curar eventos IoT de sensores y agregar atributos temporales y banderas analíticas.
+-- Curar eventos IoT de sensores para análisis en Athena y QuickSight.
 --
 -- IMPORTANTE:
--- Reemplaza <curated-bucket> por el bucket real de curados antes de ejecutar.
--- Ejemplo: s3://ejrp-g01-curated-ejrp/sensores_curated/
+-- 1) Reemplaza <curated-bucket> por el bucket real de curados antes de ejecutar.
+-- 2) Este script asume que la tabla raw se llama logidata_raw.sensores.
+--    Si Glue la crea con prefijo raw_local_, ajustar a:
+--    logidata_raw.raw_local_sensores
 
 DROP TABLE IF EXISTS logidata_curated.sensores_curated;
 
@@ -25,10 +27,15 @@ SELECT
     CAST(s.longitud AS double) AS longitud,
     CAST(s.temperatura AS double) AS temperatura,
     s.evento,
-    CASE WHEN s.evento = 'TEMP_CRITICA' THEN 1 ELSE 0 END AS temp_critica_flag,
+    CASE
+        WHEN s.evento = 'TEMP_CRITICA' THEN 1
+        ELSE 0
+    END AS temp_critica_flag,
     CASE
         WHEN CAST(s.temperatura AS double) >= 8 THEN 'ALTA'
         WHEN CAST(s.temperatura AS double) >= 4 THEN 'MEDIA'
         ELSE 'BAJA'
     END AS severidad_temperatura
-FROM logidata_raw.raw_local_sensores s;
+FROM logidata_raw.sensores s
+WHERE s.vehiculo IS NOT NULL
+  AND s.timestamp IS NOT NULL;
