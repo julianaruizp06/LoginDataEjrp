@@ -11,5 +11,5 @@ terraform {
 
 provider "aws" {
   region  = var.region
-  profile = "logidata"
+  profile = var.profile
 }

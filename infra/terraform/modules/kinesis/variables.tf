@@ -1,1 +1,6 @@
-variable "naming" { type = object({ resource_prefix = string tags = map(string) }) }
+variable "naming" {
+     type = object({
+         resource_prefix = string
+          tags = map(string)
+           })
+         }

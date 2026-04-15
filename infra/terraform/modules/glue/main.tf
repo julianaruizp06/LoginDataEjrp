@@ -24,8 +24,13 @@ resource "aws_glue_crawler" "raw_local" {
 
   s3_target { path = "s3://${var.raw_bucket_name}/raw/local/" }
 
-  schema_change_policy { update_behavior = "UPDATE_IN_DATABASE" delete_behavior = "LOG" }
-  recrawl_policy { recrawl_behavior = "CRAWL_EVERYTHING" }
+  schema_change_policy { 
+    update_behavior = "UPDATE_IN_DATABASE" 
+    delete_behavior = "LOG" 
+    }
+  recrawl_policy {
+     recrawl_behavior = "CRAWL_EVERYTHING"
+      }
 }
 
 resource "aws_glue_crawler" "raw_kinesis" {
@@ -36,8 +41,13 @@ resource "aws_glue_crawler" "raw_kinesis" {
 
   s3_target { path = "s3://${var.raw_bucket_name}/raw/kinesis/" }
 
-  schema_change_policy { update_behavior = "UPDATE_IN_DATABASE" delete_behavior = "LOG" }
-  recrawl_policy { recrawl_behavior = "CRAWL_EVERYTHING" }
+  schema_change_policy {
+     update_behavior = "UPDATE_IN_DATABASE" 
+     delete_behavior = "LOG"
+      }
+  recrawl_policy {
+     recrawl_behavior = "CRAWL_EVERYTHING"
+      }
 }
 
 resource "aws_glue_crawler" "curated" {
@@ -48,6 +58,12 @@ resource "aws_glue_crawler" "curated" {
 
   s3_target { path = "s3://${var.curated_bucket_name}/curated/" }
 
-  schema_change_policy { update_behavior = "UPDATE_IN_DATABASE" delete_behavior = "LOG" }
-  recrawl_policy { recrawl_behavior = "CRAWL_EVERYTHING" }
+  schema_change_policy { 
+    update_behavior = "UPDATE_IN_DATABASE"
+     delete_behavior = "LOG"
+      }
+
+  recrawl_policy { 
+    recrawl_behavior = "CRAWL_EVERYTHING"
+     }
 }

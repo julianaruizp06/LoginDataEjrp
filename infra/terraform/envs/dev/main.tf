@@ -36,16 +36,16 @@ module "firehose" {
   source = "../../modules/firehose"
   naming = { resource_prefix = module.naming.resource_prefix, tags = module.naming.tags }
 
-  raw_bucket_arn       = module.s3.raw_bucket_arn
-  raw_bucket_name      = module.s3.raw_bucket_name
-  pedidos_stream_arn   = module.kinesis.pedidos_stream_arn
-  sensores_stream_arn  = module.kinesis.sensores_stream_arn
-  firehose_role_arn    = module.iam.firehose_role_arn
+  raw_bucket_arn      = module.s3.raw_bucket_arn
+  raw_bucket_name     = module.s3.raw_bucket_name
+  pedidos_stream_arn  = module.kinesis.pedidos_stream_arn
+  sensores_stream_arn = module.kinesis.sensores_stream_arn
+  firehose_role_arn   = module.iam.firehose_role_arn
 }
 
 module "athena" {
-  source = "../../modules/athena"
-  naming = { resource_prefix = module.naming.resource_prefix, tags = module.naming.tags }
+  source                     = "../../modules/athena"
+  naming                     = { resource_prefix = module.naming.resource_prefix, tags = module.naming.tags }
   athena_results_bucket_name = module.s3.athena_results_bucket_name
 }
 
