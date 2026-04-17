@@ -22,7 +22,7 @@ resource "aws_kinesis_firehose_delivery_stream" "pedidos" {
     role_arn   = var.firehose_role_arn
     bucket_arn = var.raw_bucket_arn
 
-    prefix             = "raw/kinesis/pedidos/ingest_date=!{timestamp:yyyy-MM-dd}/"
+    prefix              = "raw/kinesis/pedidos/ingest_date=!{timestamp:yyyy-MM-dd}/"
     error_output_prefix = "quarantine/firehose/pedidos/ingest_date=!{timestamp:yyyy-MM-dd}/!{firehose:error-output-type}/"
 
     buffering_interval = 60
@@ -72,7 +72,7 @@ resource "aws_kinesis_firehose_delivery_stream" "sensores" {
     role_arn   = var.firehose_role_arn
     bucket_arn = var.raw_bucket_arn
 
-    prefix             = "raw/kinesis/sensores/ingest_date=!{timestamp:yyyy-MM-dd}/"
+    prefix              = "raw/kinesis/sensores/ingest_date=!{timestamp:yyyy-MM-dd}/"
     error_output_prefix = "quarantine/firehose/sensores/ingest_date=!{timestamp:yyyy-MM-dd}/!{firehose:error-output-type}/"
 
     buffering_interval = 60

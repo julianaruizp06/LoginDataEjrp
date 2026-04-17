@@ -3,17 +3,15 @@
 -- Curar eventos IoT de sensores para análisis en Athena y QuickSight.
 --
 -- IMPORTANTE:
--- 1) Reemplaza <curated-bucket> por el bucket real de curados antes de ejecutar.
--- 2) Este script asume que la tabla raw se llama logidata_raw.sensores.
+-- 1) Reemplaza ejrp-g01-curated-ejrp por el bucket real de curados antes de ejecutar.
+-- 2) Este script asume que la tabla raw se llama logidata_raw.raw_local_sensores.
 --    Si Glue la crea con prefijo raw_local_, ajustar a:
 --    logidata_raw.raw_local_sensores
-
-DROP TABLE IF EXISTS logidata_curated.sensores_curated;
 
 CREATE TABLE logidata_curated.sensores_curated
 WITH (
     format = 'PARQUET',
-    external_location = 's3://<curated-bucket>/sensores_curated/',
+    external_location = 's3://ejrp-g01-curated-ejrp/curated/sensores_curated/',
     parquet_compression = 'SNAPPY'
 ) AS
 SELECT
@@ -36,6 +34,6 @@ SELECT
         WHEN CAST(s.temperatura AS double) >= 4 THEN 'MEDIA'
         ELSE 'BAJA'
     END AS severidad_temperatura
-FROM logidata_raw.sensores s
+FROM logidata_raw.raw_local_sensores s
 WHERE s.vehiculo IS NOT NULL
   AND s.timestamp IS NOT NULL;

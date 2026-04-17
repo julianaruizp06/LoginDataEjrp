@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS logidata_curated.dim_cliente;
 CREATE TABLE logidata_curated.dim_cliente
 WITH (
     format = 'PARQUET',
-    external_location = 's3://<curated-bucket>/dim_cliente/',
+    external_location = 's3://ejrp-g01-curated-ejrp/curated/dim_cliente/',
     parquet_compression = 'SNAPPY'
 ) AS
 SELECT DISTINCT
@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS logidata_curated.dim_producto;
 CREATE TABLE logidata_curated.dim_producto
 WITH (
     format = 'PARQUET',
-    external_location = 's3://<curated-bucket>/dim_producto/',
+    external_location = 's3://ejrp-g01-curated-ejrp/curated/dim_producto/',
     parquet_compression = 'SNAPPY'
 ) AS
 SELECT DISTINCT
@@ -44,7 +44,7 @@ DROP TABLE IF EXISTS logidata_curated.dim_vehiculo;
 CREATE TABLE logidata_curated.dim_vehiculo
 WITH (
     format = 'PARQUET',
-    external_location = 's3://<curated-bucket>/dim_vehiculo/',
+    external_location = 's3://ejrp-g01-curated-ejrp/curated/dim_vehiculo/',
     parquet_compression = 'SNAPPY'
 ) AS
 SELECT DISTINCT
@@ -60,7 +60,7 @@ DROP TABLE IF EXISTS logidata_curated.dim_fecha;
 CREATE TABLE logidata_curated.dim_fecha
 WITH (
     format = 'PARQUET',
-    external_location = 's3://<curated-bucket>/dim_fecha/',
+    external_location = 's3://ejrp-g01-curated-ejrp/curated/dim_fecha/',
     parquet_compression = 'SNAPPY'
 ) AS
 SELECT DISTINCT

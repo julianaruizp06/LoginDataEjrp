@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS logidata_curated.pedidos_curated;
 CREATE TABLE logidata_curated.pedidos_curated
 WITH (
     format = 'PARQUET',
-    external_location = 's3://<curated-bucket>/pedidos_curated/',
+    external_location = 's3://ejrp-g01-curated-ejrp/curated/pedidos_curated/',
     parquet_compression = 'SNAPPY'
 ) AS
 WITH base AS (
@@ -25,12 +25,12 @@ WITH base AS (
         cat.categoria,
         CAST(cat.precio AS double) AS precio_catalogo,
         cat.tipo_entrega
-    FROM logidata_raw.pedidos p
-    LEFT JOIN logidata_raw.entregas e
+    FROM logidata_raw.raw_local_pedidos p
+    LEFT JOIN logidata_raw.raw_local_entregas e
         ON p.id_pedido = e.id_pedido
-    LEFT JOIN logidata_raw.clientes c
+    LEFT JOIN logidata_raw.raw_local_clientes c
         ON p.id_cliente = c.id_cliente
-    LEFT JOIN logidata_raw.catalogo cat
+    LEFT JOIN logidata_raw.raw_local_catalogo cat
         ON p.id_producto = cat.id_producto
 ),
 typed AS (
