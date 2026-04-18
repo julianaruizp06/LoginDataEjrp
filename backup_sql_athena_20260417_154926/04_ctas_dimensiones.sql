@@ -16,7 +16,7 @@ SELECT DISTINCT
     c.nombre AS nombre_cliente,
     c.zona AS zona_cliente,
     c.tipo_cliente
-FROM logidata_raw.raw_local_clientes c
+FROM logidata_raw.clientes c
 WHERE c.id_cliente IS NOT NULL;
 
 
@@ -34,7 +34,7 @@ SELECT DISTINCT
     cat.categoria,
     CAST(cat.precio AS double) AS precio_catalogo,
     cat.tipo_entrega
-FROM logidata_raw.raw_local_catalogo cat
+FROM logidata_raw.catalogo cat
 WHERE cat.id_producto IS NOT NULL;
 
 
@@ -51,7 +51,7 @@ SELECT DISTINCT
     e.vehiculo,
     e.conductor,
     e.zona AS zona_operacion
-FROM logidata_raw.raw_local_entregas e
+FROM logidata_raw.entregas e
 WHERE e.vehiculo IS NOT NULL;
 
 -- DIMENSIÓN FECHA
