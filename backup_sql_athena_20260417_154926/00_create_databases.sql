@@ -1,2 +1,0 @@
-CREATE DATABASE IF NOT EXISTS logidata_raw;
-CREATE DATABASE IF NOT EXISTS logidata_curated;
