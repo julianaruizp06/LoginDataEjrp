@@ -1,0 +1,36 @@
+[2026-04-20T21:35:50.129+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: logidata_pipeline_dag.run_glue_pedidos_curated manual__2026-04-20T21:35:41.166873+00:00 [queued]>
+[2026-04-20T21:35:50.145+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: logidata_pipeline_dag.run_glue_pedidos_curated manual__2026-04-20T21:35:41.166873+00:00 [queued]>
+[2026-04-20T21:35:50.146+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 1
+[2026-04-20T21:35:50.195+0000] {taskinstance.py:2191} INFO - Executing <Task(PythonOperator): run_glue_pedidos_curated> on 2026-04-20 21:35:41.166873+00:00
+[2026-04-20T21:35:50.203+0000] {standard_task_runner.py:60} INFO - Started process 793 to run task
+[2026-04-20T21:35:50.206+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'logidata_pipeline_dag', 'run_glue_pedidos_curated', 'manual__2026-04-20T21:35:41.166873+00:00', '--job-id', '30', '--raw', '--subdir', 'DAGS_FOLDER/logidata_pipeline_dag.py', '--cfg-path', '/tmp/tmpvqkdi6j0']
+[2026-04-20T21:35:50.207+0000] {standard_task_runner.py:88} INFO - Job 30: Subtask run_glue_pedidos_curated
+[2026-04-20T21:35:50.275+0000] {task_command.py:423} INFO - Running <TaskInstance: logidata_pipeline_dag.run_glue_pedidos_curated manual__2026-04-20T21:35:41.166873+00:00 [running]> on host 8ba55271cc99
+[2026-04-20T21:35:50.455+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='logidata_pipeline_dag' AIRFLOW_CTX_TASK_ID='run_glue_pedidos_curated' AIRFLOW_CTX_EXECUTION_DATE='2026-04-20T21:35:41.166873+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-04-20T21:35:41.166873+00:00'
+[2026-04-20T21:35:50.486+0000] {credentials.py:1278} INFO - Found credentials in shared credentials file: /home/airflow/.aws/credentials
+[2026-04-20T21:35:51.066+0000] {logging_mixin.py:188} INFO - Iniciado Glue job pedidos-curated-job con run_id=jr_1fc92af3ac9d3a4911f690636793f145989f6ef0567d5bfbc24073f14a677d00
+[2026-04-20T21:35:51.067+0000] {logging_mixin.py:188} INFO - Argumentos: {'--RAW_DB': 'logidata_raw', '--CURATED_BUCKET': 'ejrp-g01-curated-ejrp', '--force_refresh': 'true'}
+[2026-04-20T21:35:51.186+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T21:36:14.058+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T21:36:34.203+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T21:36:57.094+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T21:37:17.815+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T21:37:37.986+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T21:37:59.224+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> FAILED
+[2026-04-20T21:37:59.246+0000] {taskinstance.py:2698} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 433, in _execute_task
+    result = execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 199, in execute
+    return_value = self.execute_callable()
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/operators/python.py", line 216, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/logidata_pipeline_dag.py", line 67, in run_glue_pedidos
+    run_glue(
+  File "/opt/airflow/dags/logidata_pipeline_dag.py", line 61, in run_glue
+    raise AirflowException(f"{job_name} falló: {error_message}")
+airflow.exceptions.AirflowException: pedidos-curated-job falló: AnalysisException: cannot resolve 'CAST(monto AS DOUBLE)' due to data type mismatch: cannot cast struct<double:double,string:string> to double;
+[2026-04-20T21:37:59.257+0000] {taskinstance.py:1138} INFO - Marking task as FAILED. dag_id=logidata_pipeline_dag, task_id=run_glue_pedidos_curated, execution_date=20260420T213541, start_date=20260420T213550, end_date=20260420T213759
+[2026-04-20T21:37:59.317+0000] {standard_task_runner.py:107} ERROR - Failed to execute job 30 for task run_glue_pedidos_curated (pedidos-curated-job falló: AnalysisException: cannot resolve 'CAST(monto AS DOUBLE)' due to data type mismatch: cannot cast struct<double:double,string:string> to double;; 793)
+[2026-04-20T21:37:59.349+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 1
+[2026-04-20T21:37:59.409+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

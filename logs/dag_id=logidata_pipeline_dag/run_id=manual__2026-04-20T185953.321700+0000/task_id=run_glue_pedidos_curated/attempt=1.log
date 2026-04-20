@@ -1,0 +1,23 @@
+[2026-04-20T19:03:13.563+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: logidata_pipeline_dag.run_glue_pedidos_curated manual__2026-04-20T18:59:53.321700+00:00 [queued]>
+[2026-04-20T19:03:13.587+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: logidata_pipeline_dag.run_glue_pedidos_curated manual__2026-04-20T18:59:53.321700+00:00 [queued]>
+[2026-04-20T19:03:13.588+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 1
+[2026-04-20T19:03:13.695+0000] {taskinstance.py:2191} INFO - Executing <Task(PythonOperator): run_glue_pedidos_curated> on 2026-04-20 18:59:53.321700+00:00
+[2026-04-20T19:03:13.701+0000] {standard_task_runner.py:60} INFO - Started process 377 to run task
+[2026-04-20T19:03:13.706+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'logidata_pipeline_dag', 'run_glue_pedidos_curated', 'manual__2026-04-20T18:59:53.321700+00:00', '--job-id', '16', '--raw', '--subdir', 'DAGS_FOLDER/logidata_pipeline_dag.py', '--cfg-path', '/tmp/tmpvgv2ztdw']
+[2026-04-20T19:03:13.709+0000] {standard_task_runner.py:88} INFO - Job 16: Subtask run_glue_pedidos_curated
+[2026-04-20T19:03:13.969+0000] {task_command.py:423} INFO - Running <TaskInstance: logidata_pipeline_dag.run_glue_pedidos_curated manual__2026-04-20T18:59:53.321700+00:00 [running]> on host 8ba55271cc99
+[2026-04-20T19:03:14.371+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='logidata_pipeline_dag' AIRFLOW_CTX_TASK_ID='run_glue_pedidos_curated' AIRFLOW_CTX_EXECUTION_DATE='2026-04-20T18:59:53.321700+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-04-20T18:59:53.321700+00:00'
+[2026-04-20T19:03:14.404+0000] {credentials.py:1278} INFO - Found credentials in shared credentials file: /home/airflow/.aws/credentials
+[2026-04-20T19:03:14.974+0000] {logging_mixin.py:188} INFO - Iniciado Glue job pedidos-curated-job con run_id=jr_bcea6f5cd1b3b436ca0902fa9233012b381111f77c7eac8111ccf2f25e863e7d
+[2026-04-20T19:03:14.975+0000] {logging_mixin.py:188} INFO - Argumentos: {'--RAW_DB': 'logidata_raw', '--CURATED_BUCKET': 'ejrp-g01-curated-ejrp', '--force_refresh': 'true'}
+[2026-04-20T19:03:15.103+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T19:03:36.062+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T19:03:56.254+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T19:04:17.030+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T19:04:38.332+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T19:04:58.494+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> RUNNING
+[2026-04-20T19:05:21.348+0000] {logging_mixin.py:188} INFO - pedidos-curated-job -> SUCCEEDED
+[2026-04-20T19:05:21.352+0000] {python.py:201} INFO - Done. Returned value was: None
+[2026-04-20T19:05:21.395+0000] {taskinstance.py:1138} INFO - Marking task as SUCCESS. dag_id=logidata_pipeline_dag, task_id=run_glue_pedidos_curated, execution_date=20260420T185953, start_date=20260420T190313, end_date=20260420T190521
+[2026-04-20T19:05:21.459+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 0
+[2026-04-20T19:05:21.488+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

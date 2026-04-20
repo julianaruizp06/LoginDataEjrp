@@ -1,84 +1,221 @@
+from datetime import datetime
+import time
+import boto3
 from airflow import DAG
-from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
-from airflow.providers.amazon.aws.operators.athena import AthenaOperator
-from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
-from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.operators.python import PythonOperator
-from airflow.utils.dates import days_ago
-from datetime import timedelta
+from airflow.exceptions import AirflowException
 
-# --- Configuración de Argumentos ---
-DEFAULT_ARGS = {
-    'owner': 'Erika Ruiz',
-    'depends_on_past': False,
-    'start_date': days_ago(1),
-    'email_on_failure': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+REGION = "us-east-1"
+RAW_BUCKET = "ejrp-g01-raw-ejrp"
+CURATED_BUCKET = "ejrp-g01-curated-ejrp"
+
+GLUE_JOBS = {
+    "pedidos": "pedidos-curated-job",
+    "sensores": "sensores-curated-job",
+    "dimensions": "dimensions-job",
 }
 
+CRAWLER_NAME = "crawler-curated-ejrp"
+ATHENA_DB = "logidata_curated"
+ATHENA_OUTPUT = "s3://ejrp-g01-athena-results-ejrp/"
+ATHENA_WORKGROUP = "ejrp-g01-dev-wg"
+
+
+def check_raw():
+    s3 = boto3.client("s3", region_name=REGION)
+    prefixes = [
+        "raw/local/pedidos/",
+        "raw/local/entregas/",
+        "raw/local/clientes/",
+        "raw/local/catalogo/",
+        "raw/local/sensores/",
+    ]
+
+    for prefix in prefixes:
+        response = s3.list_objects_v2(Bucket=RAW_BUCKET, Prefix=prefix, MaxKeys=1)
+        if response.get("KeyCount", 0) == 0:
+            raise AirflowException(f"Falta data en s3://{RAW_BUCKET}/{prefix}")
+
+    print("RAW OK")
+
+def run_glue(job_name, arguments=None):
+    glue = boto3.client("glue", region_name=REGION)
+    args = arguments or {}
+
+    response = glue.start_job_run(JobName=job_name, Arguments=args)
+    run_id = response["JobRunId"]
+
+    print(f"Iniciado Glue job {job_name} con run_id={run_id}")
+    print(f"Argumentos: {args}")
+
+    while True:
+        job_run = glue.get_job_run(JobName=job_name, RunId=run_id)["JobRun"]
+        status = job_run["JobRunState"]
+        print(f"{job_name} -> {status}")
+
+        if status == "SUCCEEDED":
+            return
+
+        if status in {"FAILED", "STOPPED", "ERROR", "TIMEOUT"}:
+            error_message = job_run.get("ErrorMessage", "Sin detalle")
+            raise AirflowException(f"{job_name} falló: {error_message}")
+
+        time.sleep(20)
+
+
+def run_glue_pedidos():
+    run_glue(
+        GLUE_JOBS["pedidos"],
+        {
+            "--RAW_DB": "logidata_raw",
+            "--CURATED_BUCKET": CURATED_BUCKET,
+            "--force_refresh": "true",
+        },
+    )
+
+
+def run_glue_sensores():
+    run_glue(
+        GLUE_JOBS["sensores"],
+        {
+            "--RAW_DB": "logidata_raw",
+            "--CURATED_BUCKET": CURATED_BUCKET,
+        },
+    )
+
+
+def run_glue_dimensions():
+    run_glue(
+        GLUE_JOBS["dimensions"],
+        {
+            "--RAW_DB": "logidata_raw",
+            "--CURATED_BUCKET": CURATED_BUCKET,
+        },
+    )
+
+
+def run_crawler():
+    glue = boto3.client("glue", region_name=REGION)
+
+    try:
+        glue.start_crawler(Name=CRAWLER_NAME)
+        print(f"Crawler {CRAWLER_NAME} iniciado")
+    except glue.exceptions.CrawlerRunningException:
+        print(f"Crawler {CRAWLER_NAME} ya estaba corriendo")
+
+    while True:
+        crawler = glue.get_crawler(Name=CRAWLER_NAME)["Crawler"]
+        state = crawler["State"]
+        print(f"Crawler state: {state}")
+
+        if state == "READY":
+            last_crawl = crawler.get("LastCrawl", {})
+            last_status = last_crawl.get("Status", "UNKNOWN")
+            print(f"Last crawl status: {last_status}")
+
+            if last_status == "SUCCEEDED":
+                return
+
+            raise AirflowException(f"Crawler terminó sin éxito: {last_status}")
+
+        time.sleep(15)
+
+
+def run_athena_query(query: str):
+    athena = boto3.client("athena", region_name=REGION)
+
+    response = athena.start_query_execution(
+        QueryString=query,
+        QueryExecutionContext={"Database": ATHENA_DB},
+        ResultConfiguration={"OutputLocation": ATHENA_OUTPUT},
+        WorkGroup=ATHENA_WORKGROUP,
+    )
+    query_id = response["QueryExecutionId"]
+    print(f"Athena QueryExecutionId: {query_id}")
+    print(query)
+
+    while True:
+        execution = athena.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]
+        state = execution["Status"]["State"]
+        print(f"Athena state: {state}")
+
+        if state == "SUCCEEDED":
+            return
+
+        if state in {"FAILED", "CANCELLED"}:
+            reason = execution["Status"].get("StateChangeReason", "Sin detalle")
+            raise AirflowException(f"Athena falló: {reason}")
+
+        time.sleep(10)
+
+
+def validation():
+    run_athena_query("SELECT COUNT(*) FROM pedidos_curated")
+    run_athena_query("SELECT COUNT(*) FROM sensores_curated")
+
+
+def demo():
+    run_athena_query("""
+    SELECT estado, COUNT(*) AS cantidad
+    FROM pedidos_curated
+    GROUP BY estado
+    ORDER BY cantidad DESC
+    """)
+
+
+def notify_pipeline_status():
+    print("Pipeline completado correctamente.")
+    print("S3 raw -> Glue -> Curated -> Crawler -> Athena OK")
+
+
 with DAG(
-    dag_id='logidata_spark_pipeline_v1',
-    default_args=DEFAULT_ARGS,
-    schedule_interval=None,  # Se lanza manualmente o por trigger de S3
+    dag_id="logidata_pipeline_dag",
+    start_date=datetime(2026, 4, 20),
+    schedule=None,
     catchup=False,
-    tags=['DataOps', 'Spark', 'Glue'],
+    tags=["logidata", "airflow", "glue", "athena"],
 ) as dag:
 
-    # 1. Verificar presencia de archivos en RAW
-    check_raw_files = S3ListOperator(
-        task_id='check_raw_files',
-        bucket='ejrp-g01-raw-ejrp',
-        prefix='raw/',
-        aws_conn_id='aws_default'
+    t1 = PythonOperator(
+        task_id="check_raw_files",
+        python_callable=check_raw,
     )
 
-    # 2. Ejecutar Jobs de Spark (En paralelo los hechos)
-    run_glue_pedidos = GlueJobOperator(
-        task_id='run_glue_pedidos_curated',
-        job_name='pedidos-curated-job',
-        script_args={'--RAW_DB': 'logidata_raw', '--CURATED_BUCKET': 'ejrp-g01-curated-ejrp'},
-        aws_conn_id='aws_default'
+    t2 = PythonOperator(
+        task_id="run_glue_pedidos_curated",
+        python_callable=run_glue_pedidos,
     )
 
-    run_glue_sensores = GlueJobOperator(
-        task_id='run_glue_sensores_curated',
-        job_name='sensores-curated-job',
-        script_args={'--RAW_DB': 'logidata_raw', '--CURATED_BUCKET': 'ejrp-g01-curated-ejrp'},
-        aws_conn_id='aws_default'
+    t3 = PythonOperator(
+        task_id="run_glue_sensores_curated",
+        python_callable=run_glue_sensores,
     )
 
-    # 3. Ejecutar Dimensiones 
-    run_glue_dimensions = GlueJobOperator(
-        task_id='run_glue_dimensions',
-        job_name='dimensions-job',
-        script_args={'--RAW_DB': 'logidata_raw', '--CURATED_BUCKET': 'ejrp-g01-curated-ejrp'},
-        aws_conn_id='aws_default'
+    t4 = PythonOperator(
+        task_id="run_glue_dimensions",
+        python_callable=run_glue_dimensions,
     )
 
-    # 4. Actualizar Catálogo con el Crawler
-    # Nota: Usamos PythonOperator para disparar el crawler via Boto3 si no hay operador directo
-    def trigger_crawler():
-        import boto3
-        client = boto3.client('glue')
-        client.start_crawler(Name='crawler-curated-ejrp')
-
-    run_curated_crawler = PythonOperator(
-        task_id='run_curated_crawler',
-        python_callable=trigger_crawler
+    t5 = PythonOperator(
+        task_id="run_curated_crawler",
+        python_callable=run_crawler,
     )
 
-    # 5. Queries de Validación en Athena
-    run_athena_validation = AthenaOperator(
-        task_id='run_athena_validation_queries',
-        query='SELECT COUNT(*) FROM logidata_curated.vw_analisis_pedidos_spark',
-        database='logidata_curated',
-        output_location='s3://ejrp-g01-athena-results-ejrp/athena-results-into-spark/',
-        aws_conn_id='aws_default'
+    t6 = PythonOperator(
+        task_id="run_athena_validation_queries",
+        python_callable=validation,
     )
 
-    # --- Definición de Dependencias (Flujo) ---
-    check_raw_files >> [run_glue_pedidos, run_glue_sensores]
-    [run_glue_pedidos, run_glue_sensores] >> run_glue_dimensions
-    run_glue_dimensions >> run_curated_crawler
-    run_curated_crawler >> run_athena_validation
+    t7 = PythonOperator(
+        task_id="run_athena_demo_queries",
+        python_callable=demo,
+    )
+
+    t8 = PythonOperator(
+        task_id="notify_pipeline_status",
+        python_callable=notify_pipeline_status,
+    )
+
+    t1 >> [t2, t3]
+    [t2, t3] >> t4
+    t4 >> t5 >> t6 >> t7 >> t8

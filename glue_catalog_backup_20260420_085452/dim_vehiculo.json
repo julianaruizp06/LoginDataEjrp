@@ -1,0 +1,60 @@
+{
+    "Table": {
+        "Name": "dim_vehiculo",
+        "DatabaseName": "logidata_curated",
+        "Owner": "288742313330",
+        "CreateTime": "2026-04-17T16:19:48-05:00",
+        "UpdateTime": "2026-04-17T16:19:48-05:00",
+        "Retention": 0,
+        "StorageDescriptor": {
+            "Columns": [
+                {
+                    "Name": "vehiculo",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "conductor",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "zona_operacion",
+                    "Type": "string",
+                    "Parameters": {}
+                }
+            ],
+            "Location": "s3://ejrp-g01-athena-results-ejrp/athena-results/tables/d084fcdb-3bfc-4db7-963d-506fdc375357",
+            "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+            "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+            "Compressed": false,
+            "NumberOfBuckets": 0,
+            "SerdeInfo": {
+                "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                "Parameters": {}
+            },
+            "SortColumns": [],
+            "Parameters": {},
+            "StoredAsSubDirectories": false
+        },
+        "PartitionKeys": [],
+        "TableType": "EXTERNAL_TABLE",
+        "Parameters": {
+            "trino_version": "0.215-24582-g0575ac4",
+            "totalSize": "-1",
+            "has_encrypted_data": "false",
+            "EXTERNAL": "TRUE",
+            "numFiles": "-1",
+            "trino_query_id": "20260417_211948_00115_a6x68",
+            "auto.purge": "false",
+            "parquet.compression": "SNAPPY",
+            "transactional": "false"
+        },
+        "CreatedBy": "arn:aws:iam::288742313330:user/admin-logidata",
+        "IsRegisteredWithLakeFormation": false,
+        "CatalogId": "288742313330",
+        "VersionId": "0",
+        "IsMultiDialectView": false,
+        "IsMaterializedView": false
+    }
+}

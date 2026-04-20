@@ -1,0 +1,165 @@
+{
+    "Table": {
+        "Name": "pedidos_curated",
+        "DatabaseName": "logidata_curated",
+        "Owner": "288742313330",
+        "CreateTime": "2026-04-17T16:34:11-05:00",
+        "UpdateTime": "2026-04-17T16:34:11-05:00",
+        "Retention": 0,
+        "StorageDescriptor": {
+            "Columns": [
+                {
+                    "Name": "id_pedido",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "id_cliente",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "id_producto",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "fecha_pedido_ts",
+                    "Type": "timestamp",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "fecha_pedido",
+                    "Type": "date",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "anio_pedido",
+                    "Type": "bigint",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "mes_pedido",
+                    "Type": "bigint",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "periodo_ym",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "monto",
+                    "Type": "double",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "estado",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "hora_programada_ts",
+                    "Type": "timestamp",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "hora_real_ts",
+                    "Type": "timestamp",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "minutos_desviacion_entrega",
+                    "Type": "bigint",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "entrega_a_tiempo_flag",
+                    "Type": "int",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "cancelado_flag",
+                    "Type": "int",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "zona_entrega",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "conductor",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "vehiculo",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "nombre_cliente",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "zona_cliente",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "tipo_cliente",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "categoria",
+                    "Type": "string",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "precio_catalogo",
+                    "Type": "double",
+                    "Parameters": {}
+                },
+                {
+                    "Name": "tipo_entrega",
+                    "Type": "string",
+                    "Parameters": {}
+                }
+            ],
+            "Location": "s3://ejrp-g01-athena-results-ejrp/athena-results/tables/5b5ca0fc-ad63-4337-8d00-eda3c7282549",
+            "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+            "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+            "Compressed": false,
+            "NumberOfBuckets": 0,
+            "SerdeInfo": {
+                "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                "Parameters": {}
+            },
+            "SortColumns": [],
+            "Parameters": {},
+            "StoredAsSubDirectories": false
+        },
+        "PartitionKeys": [],
+        "TableType": "EXTERNAL_TABLE",
+        "Parameters": {
+            "trino_version": "0.215-24582-g0575ac4",
+            "totalSize": "-1",
+            "has_encrypted_data": "false",
+            "EXTERNAL": "TRUE",
+            "numFiles": "-1",
+            "trino_query_id": "20260417_213410_00178_7rkfr",
+            "auto.purge": "false",
+            "parquet.compression": "SNAPPY",
+            "transactional": "false"
+        },
+        "CreatedBy": "arn:aws:iam::288742313330:user/admin-logidata",
+        "IsRegisteredWithLakeFormation": false,
+        "CatalogId": "288742313330",
+        "VersionId": "0",
+        "IsMultiDialectView": false,
+        "IsMaterializedView": false
+    }
+}

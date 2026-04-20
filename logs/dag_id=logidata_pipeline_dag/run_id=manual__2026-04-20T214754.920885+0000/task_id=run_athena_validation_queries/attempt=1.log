@@ -1,0 +1,22 @@
+[2026-04-20T21:55:09.956+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: logidata_pipeline_dag.run_athena_validation_queries manual__2026-04-20T21:47:54.920885+00:00 [queued]>
+[2026-04-20T21:55:09.979+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: logidata_pipeline_dag.run_athena_validation_queries manual__2026-04-20T21:47:54.920885+00:00 [queued]>
+[2026-04-20T21:55:09.980+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 1
+[2026-04-20T21:55:10.074+0000] {taskinstance.py:2191} INFO - Executing <Task(PythonOperator): run_athena_validation_queries> on 2026-04-20 21:47:54.920885+00:00
+[2026-04-20T21:55:10.085+0000] {standard_task_runner.py:60} INFO - Started process 883 to run task
+[2026-04-20T21:55:10.098+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'logidata_pipeline_dag', 'run_athena_validation_queries', 'manual__2026-04-20T21:47:54.920885+00:00', '--job-id', '37', '--raw', '--subdir', 'DAGS_FOLDER/logidata_pipeline_dag.py', '--cfg-path', '/tmp/tmpcmc6mm1q']
+[2026-04-20T21:55:10.104+0000] {standard_task_runner.py:88} INFO - Job 37: Subtask run_athena_validation_queries
+[2026-04-20T21:55:10.371+0000] {task_command.py:423} INFO - Running <TaskInstance: logidata_pipeline_dag.run_athena_validation_queries manual__2026-04-20T21:47:54.920885+00:00 [running]> on host 8ba55271cc99
+[2026-04-20T21:55:10.531+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='logidata_pipeline_dag' AIRFLOW_CTX_TASK_ID='run_athena_validation_queries' AIRFLOW_CTX_EXECUTION_DATE='2026-04-20T21:47:54.920885+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-04-20T21:47:54.920885+00:00'
+[2026-04-20T21:55:10.557+0000] {credentials.py:1278} INFO - Found credentials in shared credentials file: /home/airflow/.aws/credentials
+[2026-04-20T21:55:11.084+0000] {logging_mixin.py:188} INFO - Athena QueryExecutionId: b672bb94-66d5-4801-a94a-0ae619f80d7f
+[2026-04-20T21:55:11.085+0000] {logging_mixin.py:188} INFO - SELECT COUNT(*) FROM pedidos_curated
+[2026-04-20T21:55:11.177+0000] {logging_mixin.py:188} INFO - Athena state: QUEUED
+[2026-04-20T21:55:21.275+0000] {logging_mixin.py:188} INFO - Athena state: SUCCEEDED
+[2026-04-20T21:55:21.611+0000] {logging_mixin.py:188} INFO - Athena QueryExecutionId: 757fabbd-6663-4868-a2c3-29787085c23a
+[2026-04-20T21:55:21.613+0000] {logging_mixin.py:188} INFO - SELECT COUNT(*) FROM sensores_curated
+[2026-04-20T21:55:21.708+0000] {logging_mixin.py:188} INFO - Athena state: QUEUED
+[2026-04-20T21:55:31.808+0000] {logging_mixin.py:188} INFO - Athena state: SUCCEEDED
+[2026-04-20T21:55:31.810+0000] {python.py:201} INFO - Done. Returned value was: None
+[2026-04-20T21:55:31.828+0000] {taskinstance.py:1138} INFO - Marking task as SUCCESS. dag_id=logidata_pipeline_dag, task_id=run_athena_validation_queries, execution_date=20260420T214754, start_date=20260420T215509, end_date=20260420T215531
+[2026-04-20T21:55:31.894+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 0
+[2026-04-20T21:55:31.971+0000] {taskinstance.py:3280} INFO - 1 downstream tasks scheduled from follow-on schedule check

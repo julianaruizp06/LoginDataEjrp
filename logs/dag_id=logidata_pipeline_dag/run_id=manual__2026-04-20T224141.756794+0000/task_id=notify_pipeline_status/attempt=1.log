@@ -1,0 +1,15 @@
+[2026-04-20T22:53:50.352+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: logidata_pipeline_dag.notify_pipeline_status manual__2026-04-20T22:41:41.756794+00:00 [queued]>
+[2026-04-20T22:53:50.378+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: logidata_pipeline_dag.notify_pipeline_status manual__2026-04-20T22:41:41.756794+00:00 [queued]>
+[2026-04-20T22:53:50.379+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 1
+[2026-04-20T22:53:50.413+0000] {taskinstance.py:2191} INFO - Executing <Task(PythonOperator): notify_pipeline_status> on 2026-04-20 22:41:41.756794+00:00
+[2026-04-20T22:53:50.419+0000] {standard_task_runner.py:60} INFO - Started process 1170 to run task
+[2026-04-20T22:53:50.423+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'logidata_pipeline_dag', 'notify_pipeline_status', 'manual__2026-04-20T22:41:41.756794+00:00', '--job-id', '58', '--raw', '--subdir', 'DAGS_FOLDER/logidata_pipeline_dag.py', '--cfg-path', '/tmp/tmpd6741iua']
+[2026-04-20T22:53:50.425+0000] {standard_task_runner.py:88} INFO - Job 58: Subtask notify_pipeline_status
+[2026-04-20T22:53:50.514+0000] {task_command.py:423} INFO - Running <TaskInstance: logidata_pipeline_dag.notify_pipeline_status manual__2026-04-20T22:41:41.756794+00:00 [running]> on host 8ba55271cc99
+[2026-04-20T22:53:50.635+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='logidata_pipeline_dag' AIRFLOW_CTX_TASK_ID='notify_pipeline_status' AIRFLOW_CTX_EXECUTION_DATE='2026-04-20T22:41:41.756794+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-04-20T22:41:41.756794+00:00'
+[2026-04-20T22:53:50.636+0000] {logging_mixin.py:188} INFO - Pipeline completado correctamente.
+[2026-04-20T22:53:50.636+0000] {logging_mixin.py:188} INFO - S3 raw -> Glue -> Curated -> Crawler -> Athena OK
+[2026-04-20T22:53:50.637+0000] {python.py:201} INFO - Done. Returned value was: None
+[2026-04-20T22:53:50.647+0000] {taskinstance.py:1138} INFO - Marking task as SUCCESS. dag_id=logidata_pipeline_dag, task_id=notify_pipeline_status, execution_date=20260420T224141, start_date=20260420T225350, end_date=20260420T225350
+[2026-04-20T22:53:50.715+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 0
+[2026-04-20T22:53:50.736+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check
