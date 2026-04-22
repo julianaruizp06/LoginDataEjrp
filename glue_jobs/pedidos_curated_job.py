@@ -7,9 +7,11 @@ from pyspark.sql.types import StructType
 import sys
 
 # ============================================================
-# Job: pedidos_curated
-# Lee tablas raw, valida schema, separa registros inválidos,
-# escribe válidos en curated e inválidos en quarantine.
+# Job: pedidos_curated (CORREGIDO)
+# - Lee tablas raw
+# - Valida schema y calidad
+# - Escribe válidos en curated
+# - Escribe inválidos en quarantine con schema plano
 # ============================================================
 
 args = getResolvedOptions(sys.argv, ["JOB_NAME", "RAW_DB", "CURATED_BUCKET"])
@@ -53,14 +55,8 @@ catalogo = glueContext.create_dynamic_frame.from_catalog(
     table_name="raw_local_catalogo"
 ).toDF()
 
-logger.info(f"Columnas de pedidos detectadas: {pedidos.columns}")
-logger.info(f"Columnas de entregas detectadas: {entregas.columns}")
-logger.info(f"Columnas de clientes detectadas: {clientes.columns}")
-logger.info(f"Columnas de catalogo detectadas: {catalogo.columns}")
-
 # ============================================================
 # 2. Validación de schema crítico
-# Si falta una columna obligatoria, falla el job completo.
 # ============================================================
 
 required_columns_pedidos = ["id_pedido", "id_cliente", "id_producto", "fecha", "monto", "estado"]
@@ -73,23 +69,21 @@ def validate_required_columns(df, required_cols, df_name):
     if missing:
         raise Exception(f"Schema inválido en {df_name}. Columnas faltantes: {missing}")
 
-validate_required_columns(pedidos, required_columns_pedidos, "raw_local_pedidos")
-validate_required_columns(entregas, required_columns_entregas, "raw_local_entregas")
-validate_required_columns(clientes, required_columns_clientes, "raw_local_clientes")
-validate_required_columns(catalogo, required_columns_catalogo, "raw_local_catalogo")
+validate_required_columns(pedidos, required_columns_pedidos, "pedidos")
+validate_required_columns(entregas, required_columns_entregas, "entregas")
+validate_required_columns(clientes, required_columns_clientes, "clientes")
+validate_required_columns(catalogo, required_columns_catalogo, "catalogo")
 
 # ============================================================
-# 3. Normalizar monto según el tipo real del schema
-# Soporta monto simple o monto como struct.
+# 3. Normalizar monto
 # ============================================================
 
 monto_field = next((f for f in pedidos.schema.fields if f.name == "monto"), None)
 
 if monto_field is None:
-    raise Exception("Schema inválido en raw_local_pedidos. No existe la columna monto.")
+    raise Exception("Schema inválido en pedidos. No existe la columna monto.")
 
 if isinstance(monto_field.dataType, StructType):
-    logger.info("La columna 'monto' llegó como struct. Se normalizará usando subcampos.")
     pedidos = pedidos.withColumn(
         "monto_num",
         F.coalesce(
@@ -98,18 +92,16 @@ if isinstance(monto_field.dataType, StructType):
         )
     )
 else:
-    logger.info("La columna 'monto' llegó como tipo simple. Se normalizará con cast directo.")
     pedidos = pedidos.withColumn(
         "monto_num",
         F.regexp_replace(F.col("monto").cast("string"), ",", ".").cast("double")
     )
 
 # ============================================================
-# 4. Renombrar columnas para evitar ambigüedades
+# 4. Normalización columnas
 # ============================================================
 
 pedidos = pedidos.withColumnRenamed("fecha", "fecha_pedido")
-
 entregas = entregas.withColumnRenamed("zona", "zona_entrega_raw")
 
 clientes = (
@@ -133,7 +125,7 @@ raw_count = df.count()
 logger.info(f"Filas después del join principal: {raw_count}")
 
 # ============================================================
-# 6. Parseo y validaciones de calidad fila a fila
+# 6. Validaciones
 # ============================================================
 
 valid_states = ["CREADO", "EN_DESPACHO", "ENTREGADO", "CANCELADO", "ANULADO"]
@@ -145,19 +137,54 @@ df_validated = (
     .withColumn("hora_real_ts", F.to_timestamp("hora_real"))
     .withColumn(
         "validation_error",
+
+        # Básicas
         F.when(F.col("id_pedido").isNull() | (F.trim(F.col("id_pedido")) == ""), F.lit("id_pedido vacío"))
         .when(F.col("id_cliente").isNull() | (F.trim(F.col("id_cliente")) == ""), F.lit("id_cliente vacío"))
         .when(F.col("id_producto").isNull() | (F.trim(F.col("id_producto")) == ""), F.lit("id_producto vacío"))
+
+        # Monto
         .when(F.col("monto").isNull(), F.lit("monto nulo original"))
         .when(F.col("monto_num").isNull(), F.lit("monto inválido"))
         .when(F.col("monto_num") < 0, F.lit("monto negativo"))
-        .when(F.col("fecha_pedido_ts").isNull(), F.lit("fecha_pedido inválida"))
+
+        # Fechas
+        .when(F.col("fecha_pedido_ts").isNull(), F.lit("fecha inválida"))
+
+        # Estado
         .when(F.col("estado").isNull() | (~F.upper(F.col("estado")).isin(valid_states)), F.lit("estado inválido"))
+
+        # Integridad referencial
+        .when(F.col("nombre_cliente_raw").isNull(), F.lit("cliente no encontrado"))
+        .when(F.col("categoria").isNull(), F.lit("producto no encontrado"))
+
+        # Conductor / vehículo
+        .when(
+            (F.upper(F.col("estado")).isin("EN_DESPACHO", "ENTREGADO")) &
+            (F.col("conductor").isNull() | (F.trim(F.col("conductor")) == "")),
+            F.lit("conductor vacío en pedido operativo")
+        )
+        .when(
+            (F.upper(F.col("estado")).isin("EN_DESPACHO", "ENTREGADO")) &
+            (F.col("vehiculo").isNull() | (F.trim(F.col("vehiculo")) == "")),
+            F.lit("vehiculo vacío en pedido operativo")
+        )
+
+        # Consistencia de estado
+        .when(
+            (F.upper(F.col("estado")) == "ENTREGADO") & F.col("hora_real_ts").isNull(),
+            F.lit("pedido entregado sin hora_real")
+        )
+        .when(
+            (F.upper(F.col("estado")).isin("ENTREGADO", "EN_DESPACHO")) &
+            F.col("hora_programada_ts").isNull(),
+            F.lit("pedido operativo sin hora_programada")
+        )
     )
 )
 
 # ============================================================
-# 6.1 Detectar duplicados por id_pedido
+# 6.1 Duplicados
 # ============================================================
 
 duplicate_ids = (
@@ -170,11 +197,7 @@ duplicate_ids = (
 
 df_validated = (
     df_validated
-    .join(
-        duplicate_ids.withColumn("duplicate_flag", F.lit(1)),
-        on="id_pedido",
-        how="left"
-    )
+    .join(duplicate_ids.withColumn("duplicate_flag", F.lit(1)), "id_pedido", "left")
     .withColumn(
         "validation_error",
         F.when(
@@ -185,7 +208,7 @@ df_validated = (
 )
 
 # ============================================================
-# 7. Separar válidos e inválidos
+# 7. Split válidos / inválidos
 # ============================================================
 
 df_invalid = df_validated.filter(F.col("validation_error").isNotNull())
@@ -198,23 +221,66 @@ logger.info(f"Filas válidas: {valid_count}")
 logger.info(f"Filas inválidas: {invalid_count}")
 
 # ============================================================
-# 8. Escribir quarantine
+# 8. Quarantine con schema 100% plano
 # ============================================================
 
 if invalid_count > 0:
-    (
+    # monto_raw plano y seguro
+    if isinstance(monto_field.dataType, StructType):
+        monto_raw_expr = F.to_json(F.col("monto"))
+    else:
+        monto_raw_expr = F.col("monto").cast("string")
+
+    df_quarantine = (
         df_invalid
         .withColumn("quarantine_ts", F.current_timestamp())
+        .withColumn("monto_raw", monto_raw_expr)
+        .withColumn("fecha_pedido_raw", F.col("fecha_pedido").cast("string"))
+        .withColumn("hora_programada_raw", F.col("hora_programada").cast("string"))
+        .withColumn("hora_real_raw", F.col("hora_real").cast("string"))
+        .select(
+            F.col("id_pedido").cast("string").alias("id_pedido"),
+            F.col("id_cliente").cast("string").alias("id_cliente"),
+            F.col("id_producto").cast("string").alias("id_producto"),
+            F.col("fecha_pedido_raw").alias("fecha_pedido"),
+            F.col("monto_raw").alias("monto"),
+            F.col("estado").cast("string").alias("estado"),
+            F.col("monto_num").cast("double").alias("monto_num"),
+            F.col("hora_programada_raw").alias("hora_programada"),
+            F.col("hora_real_raw").alias("hora_real"),
+            F.col("zona_entrega_raw").cast("string").alias("zona_entrega_raw"),
+            F.col("conductor").cast("string").alias("conductor"),
+            F.col("vehiculo").cast("string").alias("vehiculo"),
+            F.col("nombre_cliente_raw").cast("string").alias("nombre_cliente_raw"),
+            F.col("zona_cliente_raw").cast("string").alias("zona_cliente_raw"),
+            F.col("tipo_cliente").cast("string").alias("tipo_cliente"),
+            F.col("categoria").cast("string").alias("categoria"),
+            F.col("precio").cast("double").alias("precio"),
+            F.col("tipo_entrega").cast("string").alias("tipo_entrega"),
+            F.col("fecha_pedido_ts").cast("timestamp").alias("fecha_pedido_ts"),
+            F.col("hora_programada_ts").cast("timestamp").alias("hora_programada_ts"),
+            F.col("hora_real_ts").cast("timestamp").alias("hora_real_ts"),
+            F.col("validation_error").cast("string").alias("validation_error"),
+            F.coalesce(F.col("duplicate_flag").cast("int"), F.lit(0)).alias("duplicate_flag"),
+            F.col("quarantine_ts")
+        )
+    )
+
+    logger.info(f"Schema quarantine: {df_quarantine.schema.simpleString()}")
+
+    (
+        df_quarantine
         .write
         .mode("overwrite")
         .parquet(quarantine_path)
     )
+
     logger.info(f"Registros inválidos escritos en quarantine: {quarantine_path}")
 else:
     logger.info("No se detectaron registros inválidos para quarantine.")
 
 # ============================================================
-# 9. Transformaciones Silver / curated
+# 9. Curated
 # ============================================================
 
 df_curated = (
@@ -271,10 +337,6 @@ df_curated = (
 curated_count = df_curated.count()
 logger.info(f"Filas finales a escribir en curated: {curated_count}")
 
-# ============================================================
-# 10. Escritura curated
-# ============================================================
-
 (
     df_curated
     .write
@@ -284,6 +346,5 @@ logger.info(f"Filas finales a escribir en curated: {curated_count}")
 )
 
 logger.info(f"Datos curated escritos en: {output_path}")
-logger.info("Job pedidos_curated finalizado correctamente")
-
+logger.info("Job finalizado correctamente")
 job.commit()

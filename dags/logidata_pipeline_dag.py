@@ -15,14 +15,17 @@ GLUE_JOBS = {
     "dimensions": "dimensions-job",
 }
 
-CRAWLER_NAME = "crawler-curated-ejrp"
 ATHENA_DB = "logidata_curated"
-ATHENA_OUTPUT = "s3://ejrp-g01-athena-results-ejrp/"
+ATHENA_OUTPUT = "s3://ejrp-g01-athena-results-ejrp/athena-results/"
 ATHENA_WORKGROUP = "ejrp-g01-dev-wg"
+
+GLUE_TIMEOUT_SECONDS = 60 * 60      # 1 hora
+ATHENA_TIMEOUT_SECONDS = 20 * 60    # 20 minutos
 
 
 def check_raw():
     s3 = boto3.client("s3", region_name=REGION)
+
     prefixes = [
         "raw/local/pedidos/",
         "raw/local/entregas/",
@@ -32,11 +35,17 @@ def check_raw():
     ]
 
     for prefix in prefixes:
-        response = s3.list_objects_v2(Bucket=RAW_BUCKET, Prefix=prefix, MaxKeys=1)
-        if response.get("KeyCount", 0) == 0:
+        response = s3.list_objects_v2(
+            Bucket=RAW_BUCKET,
+            Prefix=prefix,
+            MaxKeys=1,
+        )
+
+        if "Contents" not in response or response.get("KeyCount", 0) == 0:
             raise AirflowException(f"Falta data en s3://{RAW_BUCKET}/{prefix}")
 
     print("RAW OK")
+
 
 def run_glue(job_name, arguments=None):
     glue = boto3.client("glue", region_name=REGION)
@@ -48,7 +57,12 @@ def run_glue(job_name, arguments=None):
     print(f"Iniciado Glue job {job_name} con run_id={run_id}")
     print(f"Argumentos: {args}")
 
+    start_time = time.time()
+
     while True:
+        if time.time() - start_time > GLUE_TIMEOUT_SECONDS:
+            raise AirflowException(f"Timeout esperando Glue job {job_name}")
+
         job_run = glue.get_job_run(JobName=job_name, RunId=run_id)["JobRun"]
         status = job_run["JobRunState"]
         print(f"{job_name} -> {status}")
@@ -69,7 +83,6 @@ def run_glue_pedidos():
         {
             "--RAW_DB": "logidata_raw",
             "--CURATED_BUCKET": CURATED_BUCKET,
-            "--force_refresh": "true",
         },
     )
 
@@ -94,33 +107,6 @@ def run_glue_dimensions():
     )
 
 
-def run_crawler():
-    glue = boto3.client("glue", region_name=REGION)
-
-    try:
-        glue.start_crawler(Name=CRAWLER_NAME)
-        print(f"Crawler {CRAWLER_NAME} iniciado")
-    except glue.exceptions.CrawlerRunningException:
-        print(f"Crawler {CRAWLER_NAME} ya estaba corriendo")
-
-    while True:
-        crawler = glue.get_crawler(Name=CRAWLER_NAME)["Crawler"]
-        state = crawler["State"]
-        print(f"Crawler state: {state}")
-
-        if state == "READY":
-            last_crawl = crawler.get("LastCrawl", {})
-            last_status = last_crawl.get("Status", "UNKNOWN")
-            print(f"Last crawl status: {last_status}")
-
-            if last_status == "SUCCEEDED":
-                return
-
-            raise AirflowException(f"Crawler terminó sin éxito: {last_status}")
-
-        time.sleep(15)
-
-
 def run_athena_query(query: str):
     athena = boto3.client("athena", region_name=REGION)
 
@@ -130,17 +116,23 @@ def run_athena_query(query: str):
         ResultConfiguration={"OutputLocation": ATHENA_OUTPUT},
         WorkGroup=ATHENA_WORKGROUP,
     )
+
     query_id = response["QueryExecutionId"]
     print(f"Athena QueryExecutionId: {query_id}")
     print(query)
 
+    start_time = time.time()
+
     while True:
+        if time.time() - start_time > ATHENA_TIMEOUT_SECONDS:
+            raise AirflowException(f"Timeout esperando Athena query {query_id}")
+
         execution = athena.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]
         state = execution["Status"]["State"]
         print(f"Athena state: {state}")
 
         if state == "SUCCEEDED":
-            return
+            return query_id
 
         if state in {"FAILED", "CANCELLED"}:
             reason = execution["Status"].get("StateChangeReason", "Sin detalle")
@@ -150,8 +142,12 @@ def run_athena_query(query: str):
 
 
 def validation():
+    # Validación mínima de existencia de datos
     run_athena_query("SELECT COUNT(*) FROM pedidos_curated")
     run_athena_query("SELECT COUNT(*) FROM sensores_curated")
+    run_athena_query("SELECT COUNT(*) FROM dim_cliente")
+    run_athena_query("SELECT COUNT(*) FROM dim_producto")
+    run_athena_query("SELECT COUNT(*) FROM dim_vehiculo")
 
 
 def demo():
@@ -162,17 +158,31 @@ def demo():
     ORDER BY cantidad DESC
     """)
 
+    run_athena_query("""
+    SELECT severidad_temperatura, COUNT(*) AS cantidad
+    FROM sensores_curated
+    GROUP BY severidad_temperatura
+    ORDER BY cantidad DESC
+    """)
+
 
 def notify_pipeline_status():
     print("Pipeline completado correctamente.")
-    print("S3 raw -> Glue -> Curated -> Crawler -> Athena OK")
+    print("S3 raw -> Glue -> Athena OK")
 
+
+default_args = {
+    "owner": "logidata",
+    "depends_on_past": False,
+    "retries": 1,
+}
 
 with DAG(
     dag_id="logidata_pipeline_dag",
     start_date=datetime(2026, 4, 20),
-    schedule=None,
+    schedule=None,   # Cambia a "@daily" cuando quieras automatizarlo
     catchup=False,
+    default_args=default_args,
     tags=["logidata", "airflow", "glue", "athena"],
 ) as dag:
 
@@ -197,25 +207,20 @@ with DAG(
     )
 
     t5 = PythonOperator(
-        task_id="run_curated_crawler",
-        python_callable=run_crawler,
-    )
-
-    t6 = PythonOperator(
         task_id="run_athena_validation_queries",
         python_callable=validation,
     )
 
-    t7 = PythonOperator(
+    t6 = PythonOperator(
         task_id="run_athena_demo_queries",
         python_callable=demo,
     )
 
-    t8 = PythonOperator(
+    t7 = PythonOperator(
         task_id="notify_pipeline_status",
         python_callable=notify_pipeline_status,
     )
 
     t1 >> [t2, t3]
     [t2, t3] >> t4
-    t4 >> t5 >> t6 >> t7 >> t8
+    t4 >> t5 >> t6 >> t7

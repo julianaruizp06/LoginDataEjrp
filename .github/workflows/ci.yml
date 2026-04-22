@@ -2,7 +2,7 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [ main, develop-ejrp, feature/mwaa-glue-spark-evolution ]
+    branches: [ main, develop-ejrp, feature/mwaa-glue-spark-evolution, clean-repo]
 
 jobs:
   python-tests:

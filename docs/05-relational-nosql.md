@@ -1,3 +1,9 @@
+> **Nota de alcance documental**
+>
+> Este documento describe una propuesta arquitectónica complementaria para sustentación y evolución futura del proyecto.
+> La implementación más madura y verificable del repositorio está centrada en el enfoque Lakehouse sobre S3 + Glue + Athena + Airflow.
+> Por lo tanto, cualquier referencia a componentes relacionales o NoSQL debe leerse como diseño propuesto o extensión arquitectónica, no necesariamente como infraestructura completamente desplegada en el estado actual del repo.
+
 # 05. Relational & NoSQL
 
 ## Objetivo de esta capa
@@ -179,22 +185,4 @@ Levantar RDS y DynamoDB para un taller puede ser más costoso que usar solo lake
 
 ---
 
-## 6. Qué mostrar en la sustentación
 
-- Diagrama simple con `RDS`, `DynamoDB`, `S3`, `Glue`, `Athena`, `Kinesis`.
-- Modelo relacional con PK/FK.
-- Tabla NoSQL con PK/SK.
-- Justificación de por qué sensores no se modelaron solo en relacional.
-- Diferencia entre capa operacional y capa analítica.
-
----
-
-## 7. Estado esperado del repo
-
-Para cerrar esta historia de usuario, el repo debería incluir al menos:
-
-- documentación de este diseño,
-- scripts SQL de PostgreSQL,
-- módulo Terraform propuesto para RDS,
-- módulo Terraform propuesto para DynamoDB,
-- evidencia o screenshots cuando se ejecute en AWS.

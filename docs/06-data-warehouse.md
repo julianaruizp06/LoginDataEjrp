@@ -1,3 +1,8 @@
+> **Nota de alineación con la implementación actual**
+>
+> Este documento sí está alineado con el estado actual del proyecto, ya que la capa analítica se apoya en datasets curated y dimensiones consultables desde Athena.
+> Debe interpretarse como la documentación lógica del modelo analítico construido sobre el Lakehouse, no como un data warehouse clásico separado físicamente de la capa curated.
+
 # 06. Data Warehouse
 
 ## Objetivo de esta capa
