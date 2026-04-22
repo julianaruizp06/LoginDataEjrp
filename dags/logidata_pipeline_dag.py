@@ -174,7 +174,7 @@ def notify_pipeline_status():
 default_args = {
     "owner": "logidata",
     "depends_on_past": False,
-    "retries": 1,
+    "retries": 0,
 }
 
 with DAG(

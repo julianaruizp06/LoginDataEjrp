@@ -1,4 +1,4 @@
-aws s3 ls s3://ejrp-g01-raw-ejrp/raw/local/pedidos/import argparse
+import argparse
 import csv
 import random
 from pathlib import Path
