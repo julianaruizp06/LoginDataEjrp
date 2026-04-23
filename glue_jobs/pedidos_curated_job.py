@@ -7,11 +7,12 @@ from pyspark.sql.types import StructType
 import sys
 
 # ============================================================
-# Job: pedidos_curated (CORREGIDO)
+# Job: pedidos_curated
 # - Lee tablas raw
 # - Valida schema y calidad
 # - Escribe válidos en curated
-# - Escribe inválidos en quarantine con schema plano
+# - Escribe inválidos en quarantine
+# - Genera log informativo de validaciones en CloudWatch y S3
 # ============================================================
 
 args = getResolvedOptions(sys.argv, ["JOB_NAME", "RAW_DB", "CURATED_BUCKET"])
@@ -30,6 +31,7 @@ bucket = args["CURATED_BUCKET"]
 
 output_path = f"s3://{bucket}/curated/pedidos_curated/"
 quarantine_path = f"s3://{bucket}/quarantine/pedidos_curated/"
+quality_log_path = f"s3://{bucket}/logs/pedidos_curated/quality_summary/"
 
 # ============================================================
 # 1. Leer tablas raw
@@ -125,7 +127,7 @@ raw_count = df.count()
 logger.info(f"Filas después del join principal: {raw_count}")
 
 # ============================================================
-# 6. Validaciones
+# 6. Validaciones de calidad
 # ============================================================
 
 valid_states = ["CREADO", "EN_DESPACHO", "ENTREGADO", "CANCELADO", "ANULADO"]
@@ -138,27 +140,24 @@ df_validated = (
     .withColumn(
         "validation_error",
 
-        # Básicas
         F.when(F.col("id_pedido").isNull() | (F.trim(F.col("id_pedido")) == ""), F.lit("id_pedido vacío"))
         .when(F.col("id_cliente").isNull() | (F.trim(F.col("id_cliente")) == ""), F.lit("id_cliente vacío"))
         .when(F.col("id_producto").isNull() | (F.trim(F.col("id_producto")) == ""), F.lit("id_producto vacío"))
 
-        # Monto
         .when(F.col("monto").isNull(), F.lit("monto nulo original"))
         .when(F.col("monto_num").isNull(), F.lit("monto inválido"))
         .when(F.col("monto_num") < 0, F.lit("monto negativo"))
 
-        # Fechas
         .when(F.col("fecha_pedido_ts").isNull(), F.lit("fecha inválida"))
 
-        # Estado
-        .when(F.col("estado").isNull() | (~F.upper(F.col("estado")).isin(valid_states)), F.lit("estado inválido"))
+        .when(
+            F.col("estado").isNull() | (~F.upper(F.col("estado")).isin(valid_states)),
+            F.lit("estado inválido")
+        )
 
-        # Integridad referencial
         .when(F.col("nombre_cliente_raw").isNull(), F.lit("cliente no encontrado"))
         .when(F.col("categoria").isNull(), F.lit("producto no encontrado"))
 
-        # Conductor / vehículo
         .when(
             (F.upper(F.col("estado")).isin("EN_DESPACHO", "ENTREGADO")) &
             (F.col("conductor").isNull() | (F.trim(F.col("conductor")) == "")),
@@ -170,7 +169,6 @@ df_validated = (
             F.lit("vehiculo vacío en pedido operativo")
         )
 
-        # Consistencia de estado
         .when(
             (F.upper(F.col("estado")) == "ENTREGADO") & F.col("hora_real_ts").isNull(),
             F.lit("pedido entregado sin hora_real")
@@ -184,7 +182,7 @@ df_validated = (
 )
 
 # ============================================================
-# 6.1 Duplicados
+# 6.1 Validación de duplicados
 # ============================================================
 
 duplicate_ids = (
@@ -216,16 +214,78 @@ df_valid = df_validated.filter(F.col("validation_error").isNull())
 
 invalid_count = df_invalid.count()
 valid_count = df_valid.count()
+total_count = raw_count
 
 logger.info(f"Filas válidas: {valid_count}")
 logger.info(f"Filas inválidas: {invalid_count}")
 
 # ============================================================
-# 8. Quarantine con schema 100% plano
+# 7.1 Log informativo de calidad y guardado en S3
+# ============================================================
+
+pct_valid = (valid_count / total_count) * 100 if total_count > 0 else 0
+pct_invalid = (invalid_count / total_count) * 100 if total_count > 0 else 0
+
+logger.info("===== RESUMEN DE VALIDACIONES =====")
+
+validation_summary = (
+    df_invalid
+    .groupBy("validation_error")
+    .count()
+    .orderBy(F.col("count").desc())
+)
+
+validation_rows = validation_summary.collect()
+
+for row in validation_rows:
+    logger.info(f"Error: {row['validation_error']} | Cantidad: {row['count']}")
+
+logger.info(f"Total registros: {total_count}")
+logger.info(f"% válidos: {round(pct_valid, 2)}%")
+logger.info(f"% inválidos: {round(pct_invalid, 2)}%")
+
+summary_rows = []
+
+for row in validation_rows:
+    summary_rows.append({
+        "tipo_registro": "error",
+        "validation_error": row["validation_error"],
+        "cantidad": int(row["count"]),
+        "total_registros": int(total_count),
+        "validos": int(valid_count),
+        "invalidos": int(invalid_count),
+        "pct_validos": round(pct_valid, 2),
+        "pct_invalidos": round(pct_invalid, 2)
+    })
+
+summary_rows.append({
+    "tipo_registro": "resumen",
+    "validation_error": "TOTAL",
+    "cantidad": int(total_count),
+    "total_registros": int(total_count),
+    "validos": int(valid_count),
+    "invalidos": int(invalid_count),
+    "pct_validos": round(pct_valid, 2),
+    "pct_invalidos": round(pct_invalid, 2)
+})
+
+df_quality_log = spark.createDataFrame(summary_rows)
+
+(
+    df_quality_log
+    .coalesce(1)
+    .write
+    .mode("overwrite")
+    .json(quality_log_path)
+)
+
+logger.info(f"Resumen de validaciones guardado en S3: {quality_log_path}")
+
+# ============================================================
+# 8. Quarantine con schema plano
 # ============================================================
 
 if invalid_count > 0:
-    # monto_raw plano y seguro
     if isinstance(monto_field.dataType, StructType):
         monto_raw_expr = F.to_json(F.col("monto"))
     else:
@@ -347,4 +407,5 @@ logger.info(f"Filas finales a escribir en curated: {curated_count}")
 
 logger.info(f"Datos curated escritos en: {output_path}")
 logger.info("Job finalizado correctamente")
+
 job.commit()

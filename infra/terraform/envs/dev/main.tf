@@ -32,9 +32,7 @@ module "iam" {
   naming = { resource_prefix = module.naming.resource_prefix, tags = module.naming.tags }
 }
  
-# BEGIN disabled batch-only
-# module "firehose" disabled for batch-only mode
-# END disabled batch-only
+
 */
 
 module "athena" {
